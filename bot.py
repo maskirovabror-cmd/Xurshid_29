@@ -8,6 +8,9 @@ BOT_TOKEN = os.environ.get("BOT_TOKEN")
 SUPABASE_URL = "https://tatzcsmrhxtppwosufsf.supabase.co"
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 
+print("BOT_TOKEN loaded:", bool(BOT_TOKEN), "len:", len(BOT_TOKEN) if BOT_TOKEN else 0)
+print("SUPABASE_KEY loaded:", bool(SUPABASE_KEY))
+
 bot = telebot.TeleBot(BOT_TOKEN)
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
@@ -23,6 +26,7 @@ def main_menu():
 
 @bot.message_handler(commands=["start"])
 def send_welcome(message):
+    print("START from chat_id:", message.chat.id)
     user_state.pop(message.chat.id, None)
     bot.send_message(
         message.chat.id,
@@ -154,7 +158,7 @@ def handle_input(message):
             ok, err = insert_flexible("xarajatlar", candidates)
             if ok:
                 user_state.pop(message.chat.id, None)
-                bot.send_message(message.chat.id, "✅ Xarajat bazaga saqlandi!", reply_markup=main_menu())
+                bot.send_message(message.chat.id, "✅ Xarajat bazaga saqlandi!", parse_mode="Markdown")
             else:
                 bot.send_message(message.chat.id, f"⚠️ Bazaga yozishda xatolik: `{err}`", parse_mode="Markdown")
 
@@ -163,10 +167,16 @@ def handle_input(message):
 
 
 if __name__ == "__main__":
+    try:
+        bot.remove_webhook()
+    except Exception as e:
+        print("Webhook clear err:", e)
+
     while True:
         try:
+            print("Starting polling...")
             bot.infinity_polling(skip_pending=True, timeout=30, long_polling_timeout=20)
         except Exception as e:
             print("Polling error:", e)
             time.sleep(20)
-            
+        
